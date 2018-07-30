@@ -13,12 +13,29 @@ var file = fs.readFileSync(`./${fileName}.tcx`, 'utf8');
 
 xml2js.parseString(file, function (err, result) {
 
+  var lapTimes = [
+    '02:59:26',
+    '03:46:18',
+    '04:05:28'
+  ].map(time => time
+      .split(':')
+      .map(str => parseInt(str, 10))
+      .map((num, index) => num * Math.pow(60, (2-index)))
+      .reduce((a,b) => a + b)
+  );
 
   var activityArr = result.TrainingCenterDatabase.Activities[0].Activity;
   var activityStartTime = moment(activityArr[0].Id[0], DATE_STRING);
   var timeToMoveBy = startTime.diff(activityStartTime); // add this to each time
-  activityArr[0] = translateStartTime(activityArr[0], timeToMoveBy);
-  activityArr[0].Lap[0] = scaleLap(activityArr[0].Lap[0], (2*3600) + (59*60) + (26));
+  activityArr[0] = translateActivity(activityArr[0], timeToMoveBy);
+  var baseLap = translateLap(activityArr[0].Lap[0], timeToMoveBy);
+
+  activityArr[0].Lap = lapTimes.map((lapDuration, i) => {
+    var lap = _.cloneDeep(baseLap);
+    lap = translateLap(lap, lapTimes[i-1] || 0);
+    lap = scaleLap(lap, lapDuration);
+    return lap;
+  });
 
   var builder = new xml2js.Builder();
   var xml = builder.buildObject(result);
@@ -26,21 +43,18 @@ xml2js.parseString(file, function (err, result) {
   fs.writeFileSync(`./${fileName}-new.tcx`, xml)
 });
 
-function translateStartTime (activity, timeToMoveBy) {
+function translateActivity (activity, timeToMoveBy) {
   activity.Id[0] = moveTimeBy(activity.Id[0], timeToMoveBy);
-  activity.Lap.map(Lap => {
-    Lap.$.StartTime = moveTimeBy(Lap.$.StartTime, timeToMoveBy);
-    Lap.Track[0].Trackpoint.map(Trackpoint => {
-      Trackpoint.Time[0] = moveTimeBy(Trackpoint.Time[0], timeToMoveBy);
-      delete Trackpoint.Extensions;
-    });
-  });
-
-  // // Append a new lap
-  // var nextLap = _.cloneDeep(_.last(activity.Lap));
-  // activity.Lap.push(nextLap);
-
   return activity;
+}
+
+function translateLap (lap, timeToMoveBy) {
+  lap.$.StartTime = moveTimeBy(lap.$.StartTime, timeToMoveBy);
+  lap.Track[0].Trackpoint.map(Trackpoint => {
+    Trackpoint.Time[0] = moveTimeBy(Trackpoint.Time[0], timeToMoveBy);
+    delete Trackpoint.Extensions;
+  });
+  return lap
 }
 
 function moveTimeBy(timeString, amountToIncreaseBy) {
