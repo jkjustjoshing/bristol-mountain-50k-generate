@@ -7,7 +7,7 @@ const DATE_STRING = 'YYYY-MM-DDTHH:mm:ss.000\\Z';
 // var fileName = 'irondequoit';
 var fileName = 'activity';
 
-var startTime = moment(new Date(2018, 6, 28, 8)).add(4, 'hours');
+var startTime = moment('2018-07-28T08', 'YYYY-MM-DDTHH').utc();
 
 var file = fs.readFileSync(`./${fileName}.tcx`, 'utf8');
 
@@ -21,18 +21,21 @@ xml2js.parseString(file, function (err, result) {
       .split(':')
       .map(str => parseInt(str, 10))
       .map((num, index) => num * Math.pow(60, (2-index)))
-      .reduce((a,b) => a + b)
+      .reduce((a,b) => a + b) * 1000
   );
 
   var activityArr = result.TrainingCenterDatabase.Activities[0].Activity;
-  var activityStartTime = moment(activityArr[0].Id[0], DATE_STRING);
+  var activityStartTime = moment.utc(activityArr[0].Id[0], DATE_STRING);
   var timeToMoveBy = startTime.diff(activityStartTime); // add this to each time
   activityArr[0] = translateActivity(activityArr[0], timeToMoveBy);
   var baseLap = translateLap(activityArr[0].Lap[0], timeToMoveBy);
 
   activityArr[0].Lap = lapTimes.map((lapDuration, i) => {
     var lap = _.cloneDeep(baseLap);
-    lap = translateLap(lap, lapTimes[i-1] || 0);
+
+    var startTimeToTranslate = lapTimes.reduce((runningSum, thisVal, index) => index < i ? runningSum + thisVal : runningSum, 0);
+
+    lap = translateLap(lap, startTimeToTranslate);
     lap = scaleLap(lap, lapDuration);
     return lap;
   });
@@ -58,14 +61,14 @@ function translateLap (lap, timeToMoveBy) {
 }
 
 function moveTimeBy(timeString, amountToIncreaseBy) {
-  var date = moment(timeString, DATE_STRING);
+  var date = moment.utc(timeString, DATE_STRING);
   date.add(amountToIncreaseBy);
 
-  return date.format(DATE_STRING);
+  return date.utc().format(DATE_STRING);
 }
 
 function scaleLap(lap, secondsForDuration) {
-  var startTime = moment(lap.$.StartTime, DATE_STRING);
+  var startTime = moment.utc(lap.$.StartTime, DATE_STRING);
   var initialDuration = parseFloat(lap.TotalTimeSeconds[0]);
   lap.TotalTimeSeconds[0] = String(secondsForDuration) + '.0';
 
@@ -78,11 +81,11 @@ function scaleLap(lap, secondsForDuration) {
 }
 
 function scaleTimeBy (timeString, startTime, scaleFactor) {
-  var date = moment(timeString, DATE_STRING);
+  var date = moment.utc(timeString, DATE_STRING);
   var initialDiff = date.diff(startTime);
 
   var newTime = date.add(initialDiff * scaleFactor);
 
-  return newTime.format(DATE_STRING);
+  return newTime.utc().format(DATE_STRING);
 }
 
