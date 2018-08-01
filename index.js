@@ -41,7 +41,7 @@ xml2js.parseString(file, function (err, result) {
 
     var startTimeToTranslate = lapTimes.reduce((runningSum, thisVal, index) => index < i ? runningSum + thisVal : runningSum, 0);
 
-    lap = translateLap(lap, startTimeToTranslate);
+    lap = translateLap(lap, startTimeToTranslate, i * parseFloat(_.last(activityArr[0].Lap[0].Track[0].Trackpoint).DistanceMeters[0]));
     lap = scaleLap(lap, lapDuration);
     return lap;
   });

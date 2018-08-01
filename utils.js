@@ -2,10 +2,11 @@ var moment = require('moment');
 var _ = require('lodash');
 const DATE_STRING = 'YYYY-MM-DDTHH:mm:ss.000\\Z';
 
-function translateLap (lap, timeToMoveBy) {
+function translateLap (lap, timeToMoveBy, distanceToStartAt = 0) {
   lap.$.StartTime = moveTimeBy(lap.$.StartTime, timeToMoveBy);
   lap.Track[0].Trackpoint.map(Trackpoint => {
     Trackpoint.Time[0] = moveTimeBy(Trackpoint.Time[0], timeToMoveBy);
+    Trackpoint.DistanceMeters[0] = String(parseFloat(Trackpoint.DistanceMeters[0]) + distanceToStartAt);
     delete Trackpoint.Extensions;
   });
   return lap
