@@ -38,7 +38,7 @@ function scaleLap(lap, millisecondsForDurationOrDesiredEndTime) {
     millisecondsForDuration = millisecondsForDurationOrDesiredEndTime;
   }
 
-  lap.TotalTimeSeconds[0] = String(millisecondsForDuration) + '.0';
+  lap.TotalTimeSeconds[0] = String(millisecondsForDuration / 1000) + '.0';
   var scaleFactor = getScaleFactor(startTime, moment.utc(_.last(lap.Track[0].Trackpoint).Time[0], DATE_STRING), millisecondsForDuration);
 
   lap.Track[0].Trackpoint.map(Trackpoint => {

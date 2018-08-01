@@ -66,11 +66,11 @@ xml2js.parseString(file, function (err, result) {
   //  - Scale the 1st half lap correctly based on start time
   //  - Scale the 2nd half correctly based on end time
 
-  activityArr[0].Lap =[
-    activityArr[0].Lap[0],
-    activityArr[0].Lap[1],
-    ...pinLap(activityArr[0].Lap[2], moment('2018-07-28T16:11', 'YYYY-MM-DDTHH:mm').utc(), [42.740440, -77.406995])//[42.7386278,-77.4171083])
-  ];
+  // activityArr[0].Lap =[
+  //   activityArr[0].Lap[0],
+  //   activityArr[0].Lap[1],
+  //   ...pinLap(activityArr[0].Lap[2], moment('2018-07-28T16:11', 'YYYY-MM-DDTHH:mm').utc(), [42.740440, -77.406995])//[42.7386278,-77.4171083])
+  // ];
 
   var builder = new xml2js.Builder();
   var xml = builder.buildObject(result);
