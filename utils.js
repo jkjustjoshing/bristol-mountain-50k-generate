@@ -1,4 +1,5 @@
 var moment = require('moment');
+var _ = require('lodash');
 const DATE_STRING = 'YYYY-MM-DDTHH:mm:ss.000\\Z';
 
 function translateLap (lap, timeToMoveBy) {
@@ -17,25 +18,23 @@ function moveTimeBy(timeString, amountToIncreaseBy) {
   return date.utc().format(DATE_STRING);
 }
 
-function scaleLap(lap, secondsForDuration) {
+function scaleLap(lap, millisecondsForDuration) {
   var startTime = moment.utc(lap.$.StartTime, DATE_STRING);
-  var initialDuration = parseFloat(lap.TotalTimeSeconds[0]);
-  lap.TotalTimeSeconds[0] = String(secondsForDuration) + '.0';
+  var initialDuration = moment.utc(_.last(lap.Track[0].Trackpoint).Time[0], DATE_STRING).diff(startTime);
+  lap.TotalTimeSeconds[0] = String(millisecondsForDuration) + '.0';
+  var scaleFactor = (millisecondsForDuration - 1000) / initialDuration;
 
-  var scaleFactor = secondsForDuration / initialDuration;
   lap.Track[0].Trackpoint.map(Trackpoint => {
-    Trackpoint.Time[0] = scaleTimeBy(Trackpoint.Time[0], startTime, scaleFactor);
+    Trackpoint.Time[0] = scaleTimeBy(Trackpoint.Time[0], startTime, scaleFactor, millisecondsForDuration);
   });
 
   return lap;
 }
 
-function scaleTimeBy (timeString, startTime, scaleFactor) {
+function scaleTimeBy (timeString, startTime, scaleFactor, maximumDifferenceMilliseconds) {
   var date = moment.utc(timeString, DATE_STRING);
   var initialDiff = date.diff(startTime);
-
-  var newTime = date.add(initialDiff * scaleFactor);
-
+  var newTime = startTime.clone().add(initialDiff * scaleFactor);
   return newTime.utc().format(DATE_STRING);
 }
 
